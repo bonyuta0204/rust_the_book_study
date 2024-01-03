@@ -1,10 +1,14 @@
-use std::fs;
+use std::{env, fs};
 use std::{env::Args, error::Error};
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string(&config.filename)?;
 
-    let lines = search(&config.query, &content);
+    let lines = if config.case_sensitive {
+        search(&config.query, &content)
+    } else {
+        case_insensitive_search(&config.query, &content)
+    };
 
     for line in lines {
         println!("{line}")
@@ -13,18 +17,23 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
-    let mut matched: Vec<_> = Vec::new();
-    for line in content.lines() {
-        if line.contains(query) {
-            matched.push(line)
-        }
-    }
-    matched
+    content
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
+}
+
+fn case_insensitive_search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
+    content
+        .lines()
+        .filter(|line| line.to_lowercase().contains(&query.to_lowercase()))
+        .collect()
 }
 
 pub struct Config {
     pub query: String,
     pub filename: String,
+    pub case_sensitive: bool,
 }
 
 impl Config {
@@ -40,7 +49,16 @@ impl Config {
             None => return Err("You must specify filename as second argument"),
         };
 
-        Ok(Config { query, filename })
+        let case_sensitive = match env::var("IGNORE_CASE") {
+            Ok(_) => true,
+            Err(_) => false,
+        };
+
+        Ok(Config {
+            query,
+            filename,
+            case_sensitive,
+        })
     }
 }
 
@@ -57,5 +75,16 @@ safe, fast, productive.
 Pick three.";
 
         assert_eq!(vec!["safe, fast, productive."], search(query, contents))
+    }
+
+    #[test]
+    fn case_sensitive() {
+        let query = "rust";
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.";
+
+        assert_eq!(vec!["Rust:"], case_insensitive_search(query, contents))
     }
 }
