@@ -5,9 +5,10 @@ fn main() {
 
     post.add_text("I ate salad for lunch");
 
-    let post = post.request_review();
+    let mut pending_post = post.request_review();
 
-    let post = post.approve();
+    pending_post.approve();
+    pending_post.approve();
 
-    println!("Content: {}", post.content());
+    println!("Content: {}", pending_post.to_post().unwrap().content());
 }
