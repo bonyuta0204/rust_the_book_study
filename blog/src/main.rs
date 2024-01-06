@@ -5,9 +5,9 @@ fn main() {
 
     post.add_text("I ate salad for lunch");
 
-    post.request_review();
+    let post = post.request_review();
 
-    post.approve();
+    let post = post.approve();
 
     println!("Content: {}", post.content());
 }
