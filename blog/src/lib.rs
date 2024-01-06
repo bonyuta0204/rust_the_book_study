@@ -35,7 +35,7 @@ impl Post {
 trait State {
     fn request_review(self: Box<Self>) -> Box<dyn State>;
     fn approve(self: Box<Self>) -> Box<dyn State>;
-    fn content<'a>(&self, post: &'a Post) -> &'a str {
+    fn content<'a>(&self, _post: &'a Post) -> &'a str {
         ""
     }
 }
@@ -77,5 +77,34 @@ impl State for Published {
 
     fn content<'a>(&self, post: &'a Post) -> &'a str {
         &post.content
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_draft() {
+        let mut post = Post::new();
+        post.add_text("I ate salad for lunch");
+        assert_eq!("", post.content());
+    }
+
+    #[test]
+    fn test_pending_review() {
+        let mut post = Post::new();
+        post.add_text("I ate salad for lunch");
+        post.request_review();
+        assert_eq!("", post.content());
+    }
+
+    #[test]
+    fn test_published() {
+        let mut post = Post::new();
+        post.add_text("I ate salad for lunch");
+        post.request_review();
+        post.approve();
+        assert_eq!("I ate salad for lunch", post.content());
     }
 }
